@@ -1,20 +1,21 @@
-import socket  # noqa: F401
+import asyncio
+import socket
 
-
-def main():
-    # You can use print statements as follows for debugging, they'll be visible when running tests.
-    print("Logs from your program will appear here!")
-
-    # Uncomment this to pass the first stage
-    #
-    server_socket = socket.create_server(("localhost", 6379), reuse_port=True)
-    conn, _ = server_socket.accept() # wait for client
+async def handle_client(conn):
     while True:
-        data = conn.recv(1024)
+        data = await asyncio.to_thread(conn.recv, 1024)
         if not data:
             break
-        conn.sendall(b"+PONG\r\n")
+        await asyncio.to_thread(conn.sendall, b"+PONG\r\n")
+    conn.close()
 
+async def main():
+    server_socket = socket.create_server(("localhost", 6379), reuse_port=True)
+    print("Server started. Waiting for clients...")
+
+    while True:
+        conn, _ = await asyncio.to_thread(server_socket.accept)
+        asyncio.create_task(handle_client(conn))
 
 if __name__ == "__main__":
-    main()
+    asyncio.run(main())
