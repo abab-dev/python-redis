@@ -1,5 +1,6 @@
 import asyncio
 import socket
+from protocol_parser import RedisProtocolParser
 
 async def handle_client(conn):
     while True:
