@@ -7,7 +7,14 @@ async def handle_client(conn):
         data = await asyncio.to_thread(conn.recv, 1024)
         if not data:
             break
-        await asyncio.to_thread(conn.sendall, b"+PONG\r\n")
+        parser = RedisProtocolParser()
+        parser.feed(data)
+        if  parser.retbuf[0] == b'PING':
+            await asyncio.to_thread(conn.sendall, b"+PONG\r\n")
+        elif parser.retbuf[0] == b'ECHO':
+            resp = b'$' + str(len(parser.retbuf[1])).encode('utf-8') + b'\r\n' + parser.retbuf[1] + b'\r\n'
+            await asyncio.to_thread(conn.sendall,resp)
+
     conn.close()
 
 async def main():
