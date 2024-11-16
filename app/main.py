@@ -1,3 +1,4 @@
+__package__ = 'app'
 import asyncio
 import socket
 from app.protocol_parser import RedisProtocolParser,Writer
