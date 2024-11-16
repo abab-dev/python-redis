@@ -21,7 +21,7 @@ async def handle_client(conn):
             resp = handle_echo(writer,msg) 
         elif command == 'GET':
             resp = handle_get(writer,msg,datastore)
-        elif command == "SET":
+        elif command == 'SET':
             resp = handle_set(writer,msg,datastore)
 
 
