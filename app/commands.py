@@ -12,10 +12,10 @@ def handle_get(writer,msg,datastore):
     key = msg[1]
     try:
         value = datastore.get(key,None)
+        return writer.serialize(value)
     except:
-        print(datastore)
+        return writer.serialize("key does not exist",e=True)
 
-    return writer.serialize(value)
 
 
 

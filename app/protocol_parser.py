@@ -70,7 +70,7 @@ class Writer:
                 response += self.serialize_integer(val)
         return response
 
-    def serialize(self,msg) :
+    def serialize(self,msg,e=False) :
         if isinstance(msg,list) :
             obj = self.serialize_array(msg)
         elif isinstance(msg,str):
@@ -79,6 +79,8 @@ class Writer:
             obj = self.serialize_integer(msg)
         elif isinstance(msg,bytes):
             return msg 
+        elif e==True:
+            obj = self.serialize_error(msg)
         return obj.encode("utf-8")
 
     

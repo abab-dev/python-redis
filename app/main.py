@@ -6,7 +6,6 @@ from .commands import handle_echo,handle_ping,handle_get,handle_set
 datastore={}
 
 async def handle_client(conn):
-    global datastore 
     
     while True:
         data = await asyncio.to_thread(conn.recv, 1024)
