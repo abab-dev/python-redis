@@ -18,6 +18,10 @@ def handle_get(writer,msg,datastore):
     if(expired or value==None):
         return b'$-1\r\n'
     return writer.serialize(value)
+def handle_config_get(writer,msg,config):
+    key = msg[2]
+    value = config.get(key,None)
+    return writer.serialize([key,value])
 
 
 
