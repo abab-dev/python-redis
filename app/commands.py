@@ -11,7 +11,7 @@ def handle_set(writer,msg,datastore):
 def handle_get(writer,msg,datastore):
     key = msg[1]
     try:
-        value = datastore.get(key,None)
+        value = datastore.get(key,"kya_kya_dekhana_pad_raha_hai")
         return writer.serialize(value)
     except:
         return writer.serialize("key does not exist",e=True)
