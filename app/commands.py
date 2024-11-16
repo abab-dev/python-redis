@@ -10,7 +10,11 @@ def handle_set(writer,msg,datastore):
     return writer.serialize(resp)
 def handle_get(writer,msg,datastore):
     key = msg[1]
-    value = datastore.get(key,None)
+    try:
+        value = datastore.get(key,None)
+    except:
+        print(datastore)
+
     return writer.serialize(value)
 
 
