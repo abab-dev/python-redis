@@ -1,40 +1,51 @@
-__package__  = 'app'
 import asyncio
-import socket
-from .protocol_parser import RedisProtocolParser,Writer
-from .commands import handle_echo,handle_ping,handle_get,handle_set
-datastore={}
+from .protocol_parser import RedisProtocolParser, Writer
+from .commands import handle_echo, handle_ping, handle_get, handle_set
 
-async def handle_client(conn):
-    
-    while True:
-        data = await asyncio.to_thread(conn.recv, 1024)
+datastore = {}
+
+async def handle_client(reader, writer):
+    addr = writer.get_extra_info('peername')
+    print(f"Connected by {addr}")
+
+    while not reader.at_eof():
+        data = await reader.read(1024)
         if not data:
-            break
+            break  # Client has closed the connection
+        # print(f"Received {data}")
         parser = RedisProtocolParser()
-        writer = Writer()
+        writer_obj = Writer()
+        # print("before parsing data")
         msg = parser.parse(data)
+        # print("data parased")
         command = msg[0].upper()
-        if  command == 'PING':
-            resp = handle_ping(writer) 
+        if command == 'PING':
+            resp = handle_ping(writer_obj)
         elif command == 'ECHO':
-            resp = handle_echo(writer,msg) 
+            resp = handle_echo(writer_obj, msg)
         elif command == 'GET':
-            resp = handle_get(writer,msg,datastore)
-        elif command == 'SET':
-            resp = handle_set(writer,msg,datastore)
+            resp = handle_get(writer_obj, msg, datastore)
+        elif command == "SET":
+            resp = handle_set(writer_obj, msg, datastore)
+        else:
+            resp = b"ERROR unknown command\r\n"
+        # print("commands checked")
+        # print(resp)
 
+        writer.write(resp)
+        await writer.drain()  # Ensure the data is sent
 
-        return await asyncio.to_thread(conn.sendall,resp)
-    conn.close()
+    # print("Close the connection")
+    writer.close()
+    await writer.wait_closed()
 
 async def main():
-    server_socket = socket.create_server(("localhost", 6379), reuse_port=True)
-    print("Server started. Waiting for clients...")
+    server = await asyncio.start_server(handle_client, '127.0.0.1', 6379)
+    addrs = ', '.join(str(sock.getsockname()) for sock in server.sockets)
+    print(f'Serving on {addrs}')
 
-    while True:
-        conn, _ = await asyncio.to_thread(server_socket.accept)
-        asyncio.create_task(handle_client(conn))
+    async with server:
+        await server.serve_forever()
 
 if __name__ == "__main__":
     asyncio.run(main())

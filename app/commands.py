@@ -1,5 +1,6 @@
 def handle_echo(writer,arr):
-    return writer.serialize(arr[1:])
+    resp = arr[1]
+    return writer.serialize(resp)
 def handle_ping(writer):
     resp = b'+PONG\r\n'
     return writer.serialize(resp)

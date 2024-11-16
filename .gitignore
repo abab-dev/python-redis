@@ -8,6 +8,7 @@ __pycache__/
 #testing
 test_commands.py
 test_parser.py
+main1.py
 
 # Distribution / packaging
 .Python
