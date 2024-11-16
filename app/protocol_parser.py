@@ -82,14 +82,3 @@ class Writer:
         return obj.encode("utf-8")
 
     
-# Example usage of the parser and writer
-# parser = RedisProtocolParser()
-# output = parser.parse(b'*3\r\n$3\r\nSET\r\n$5\r\nmykey\r\n$7\r\nmyvalue\r\n')
-# print(output)
-# output = parser.parse(b'*2\r\n$4\r\nECHO\r\n$3\r\nhey\r\n')
-# print(output)  # Output: ['ECHO', 'hey']
-# output = '1'
-
-# writer = Writer()
-# serialized = writer.write(output)
-# print(serialized)  # Output: *2\r\n$4\r\nECHO\r\n$3\r\nhey\r\n
