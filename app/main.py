@@ -11,7 +11,7 @@ async def handle_client(reader, writer):
     while not reader.at_eof():
         data = await reader.read(1024)
         if not data:
-            break  # Client has closed the connection
+            break  
         # print(f"Received {data}")
         parser = RedisProtocolParser()
         writer_obj = Writer()
@@ -33,7 +33,7 @@ async def handle_client(reader, writer):
         # print(resp)
 
         writer.write(resp)
-        await writer.drain()  # Ensure the data is sent
+        await writer.drain()  
 
     # print("Close the connection")
     writer.close()

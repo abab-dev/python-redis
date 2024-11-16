@@ -70,7 +70,7 @@ class Writer:
                 response += self.serialize_integer(val)
         return response
 
-    def serialize(self,msg,e=False) :
+    def serialize(self,msg,error=False) :
         if isinstance(msg,list) :
             obj = self.serialize_array(msg)
         elif isinstance(msg,str):
