@@ -1,10 +1,11 @@
 import argparse
+from collections import deque
 import os
 import asyncio
 from .protocol_parser import RedisProtocolParser, Writer
 from .rdb import Dbparser
 from .commands import handle_echo, handle_ping, handle_get, handle_set,handle_config_get,handle_get_keys,handle_get_info,handle_replconf,handle_psync,handle_rdb_transfer
-from .replication import replica_tasks
+from .replication import replica_tasks,propagate_commands
 
 
 datastore = {}
@@ -14,6 +15,8 @@ INFO={
     "master_replid":"8371b4fb1155b71f4a04d3e1bc3e18c4a990aeeb",
     "master_repl_offset":"0"
 }
+replication_buffer = deque()
+replicas = []
 rdb_file_path=""
 rdb_parser_required = False
 def init_rdb_parser(parsing_reqd_flag, rdb_file_path):
@@ -59,6 +62,7 @@ async def handle_client(reader, writer):
             writer.write(resp)
             val = handle_rdb_transfer(writer_obj,msg)
             writer.write(val)
+            replicas.append((reader,writer))
             return
         else:
             resp = b"ERROR unknown command\r\n"
@@ -98,6 +102,9 @@ async def main():
         )
         # print("replica conn established"+master_host+master_port)
         asyncio.create_task(replica_tasks(rep_reader,rep_writer))
+    else:
+        asyncio.create_task(propagate_commands(replication_buffer, replicas))
+
     global datastore
     kv_store = init_rdb_parser(rdb_parser_required, rdb_file_path)
     datastore |= kv_store
