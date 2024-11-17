@@ -52,6 +52,8 @@ async def handle_client(reader, writer):
             resp = handle_get_keys(writer_obj,msg,datastore)
         elif command == "INFO":
             resp = handle_get_info(writer_obj,msg,INFO)
+        elif command == "REPLCONF":
+            resp = handle_replconf(writer_obj,msg)
         else:
             resp = b"ERROR unknown command\r\n"
         # print("commands checked")
@@ -84,10 +86,10 @@ async def main():
     if args.replicaof:
         INFO['role']="slave"
         master_host, master_port = args.replicaof[0].split(" ")
-        reader, writer = await asyncio.open_connection(
+        rep_reader, rep_writer = await asyncio.open_connection(
             master_host, master_port
         )
-        asyncio.create_task(replica_tasks(reader,writer))
+        asyncio.create_task(replica_tasks(rep_reader,rep_writer))
     global datastore
     kv_store = init_rdb_parser(rdb_parser_required, rdb_file_path)
     datastore |= kv_store

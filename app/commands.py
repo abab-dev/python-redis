@@ -32,6 +32,11 @@ def handle_get_info(writer,msg,info):
     if(msg[1]=="replication"):
         resp = "\r\n".join(f"{key}:{value}" for key, value in info.items())
         return writer.serialize(resp)
+def handle_replconf(writer,msg):
+    if(msg[1]=="listening-port"):
+        return writer.serialize(msg)
+    elif(msg[1]=="capa"):
+        return writer.serialize(msg)
 
 
 
