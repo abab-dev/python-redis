@@ -103,6 +103,7 @@ async def main():
         # print("replica conn established"+master_host+master_port)
         asyncio.create_task(replica_tasks(rep_reader,rep_writer))
     else:
+        print("before propogate commands")
         asyncio.create_task(propagate_commands(replication_buffer, replicas))
 
     global datastore
