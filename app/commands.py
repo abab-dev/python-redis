@@ -34,7 +34,7 @@ def handle_get_info(writer,msg,info):
         return writer.serialize(resp)
 def handle_replconf(writer,msg):
     return b"+OK\r\n"
-async def handle_psync(writer, msg): 
+def handle_psync(writer, msg): 
     response = f"FULLRESYNC 524544495330303131fa0972656469732d76657205372e322e30 0"
     return writer.serialize(response)
     
