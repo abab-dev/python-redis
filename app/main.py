@@ -29,6 +29,7 @@ def init_rdb_parser(parsing_reqd_flag, rdb_file_path):
 async def handle_client(reader, writer):
     addr = writer.get_extra_info('peername')
     print(f"Connected by {addr}")
+    replication_offset = 0
 
     while not reader.at_eof():
         data = await reader.read(1024)
@@ -50,6 +51,9 @@ async def handle_client(reader, writer):
             resp = handle_get(writer_obj, msg, datastore)
         elif command == "SET":
             resp = handle_set(writer_obj, msg, datastore)
+            data = writer_obj.serialize(msg)
+            replication_offset += parser.get_byte_offset(msg)
+            replication_buffer.append(data)
         elif command == "CONFIG":
             resp = handle_config_get(writer_obj,msg,CONFIG)
         elif command == "KEYS":
