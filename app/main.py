@@ -3,7 +3,7 @@ import os
 import asyncio
 from .protocol_parser import RedisProtocolParser, Writer
 from .rdb import Dbparser
-from .commands import handle_echo, handle_ping, handle_get, handle_set,handle_config_get,handle_get_keys,handle_get_info,handle_replconf,handle_psync
+from .commands import handle_echo, handle_ping, handle_get, handle_set,handle_config_get,handle_get_keys,handle_get_info,handle_replconf,handle_psync,handle_rdb_transfer
 from .replication import replica_tasks
 
 
@@ -56,6 +56,10 @@ async def handle_client(reader, writer):
             resp = handle_replconf(writer_obj,msg)
         elif command == "PSYNC":
             resp = handle_psync(writer_obj,msg)
+            writer.write(resp)
+            val = handle_rdb_transfer(writer,msg)
+            writer.write(val)
+            return
         else:
             resp = b"ERROR unknown command\r\n"
         # print("commands checked")

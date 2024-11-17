@@ -1,4 +1,5 @@
 from .time_utils import create_ts,validate_ts,EXPIRY_DEFAULT
+import binascii
 def handle_echo(writer,arr):
     resp = arr[1]
     return writer.serialize(resp)
@@ -37,6 +38,25 @@ def handle_replconf(writer,msg):
 def handle_psync(writer, msg): 
     response = f"FULLRESYNC 524544495330303131fa0972656469732d76657205372e322e30 0"
     return writer.serialize(response)
+def handle_rdb_transfer(writer,msg):
+    hex_str = (
+        "524544495330303131fa0972656469732d76657205372e322e30"
+        "fa0a72656469732d62697473c040fa056374696d65c26d08bc65"
+        "fa08757365642d6d656dc2b0c41000fa08616f662d62617365c0"
+        "00fff06e3bfec0ff5aa2"
+    )
+    try:
+        # Decode the hex string to bytes
+        bytes_data = binascii.unhexlify(hex_str)
+    except binascii.Error as e:
+        print(f"Encountered {e} while decoding hex string")
+        return None  # Adjust based on how you want to handle errors
+
+    resp = b"$" + str(len(bytes_data)).encode() + b"\r\n"
+    msg = resp + bytes_data
+
+    return writer.serialize(msg)
+
     
 
 

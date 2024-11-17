@@ -22,4 +22,6 @@ async def replica_tasks(rep_reader,rep_writer):
     rep_writer.write(resp)
     data = await rep_reader.read(1024)
     print(data)
+    rdb = await rep_reader.read_rdb()
+    print(rdb)
     return

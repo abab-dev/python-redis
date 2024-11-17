@@ -42,6 +42,14 @@ class RedisProtocolParser:
             val = self.parse_bulk()
             arr.append(val)
         return arr
+    def read_rdb(self): 
+        _ = self.buf.readexactly(1)
+        line = self.buf.readline()
+        length = int(line)
+        if length == -1:
+            return b""
+        data = self.buf.readexactly(length)
+        return data
 
     
 
