@@ -17,4 +17,9 @@ async def replica_tasks(rep_reader,rep_writer):
     rep_writer.write(resp)
     data = await rep_reader.read(1024)
     print(data)
+
+    resp =  writer_obj.serialize(["PSYNC", "?", "-1"])
+    rep_writer.write(resp)
+    data = await rep_reader.read(1024)
+    print(data)
     return
