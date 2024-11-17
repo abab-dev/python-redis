@@ -1,21 +1,28 @@
 from .protocol_parser import RedisProtocolParser,Writer
-from time import sleep
 from .time_utils import create_ts
+import asyncio
 datastore={}
 async def propagate_commands(
     replication_buffer,
     replicas
 ): 
-    print(len(replicas))
     while True:
         if len(replicas) != 0:
             if len(replication_buffer) != 0:
                 cmd = replication_buffer.popleft()
-                for replica in replicas:
+                for replica in replicas[:]:
                     _, w = replica
+                    if w.is_closing():
+                        replicas.remove(replica)
+                        continue
                     se = Writer()
-                    await w.write(se.serialize(cmd))
-        await sleep(0.125)
+                    try:
+                        await w.write(se.serialize(cmd))
+                    except Exception as e:
+                        print(f"Error propagating command to replica: {e}")
+                        replicas.remove(replica)
+        await asyncio.sleep(0.01)  # Check for new commands more frequently
+
 async def replica_tasks(rep_reader,rep_writer):
     parser = RedisProtocolParser() 
     writer_obj = Writer()
