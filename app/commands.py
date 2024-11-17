@@ -30,7 +30,7 @@ def handle_get_keys(writer,msg,datastore):
     return  writer.serialize(key_list)
 def handle_get_info(writer,msg,info):
     if(msg[1]=="replication"):
-        resp = [f"{key}:{value}" for key, value in info.items()]
+        resp = "\r\n".join(f"{key}:{value}" for key, value in info.items())
         return writer.serialize(resp)
 
 

@@ -77,10 +77,10 @@ class Writer:
             obj = self.serialize_str(msg)
         elif isinstance(msg,int):
             obj = self.serialize_integer(msg)
+        elif error==True:
+            obj = self.serialize_error(msg)
         elif isinstance(msg,bytes):
             return msg 
-        elif e==True:
-            obj = self.serialize_error(msg)
         return obj.encode("utf-8")
 
     
