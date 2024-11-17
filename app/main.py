@@ -57,7 +57,7 @@ async def handle_client(reader, writer):
         elif command == "PSYNC":
             resp = handle_psync(writer_obj,msg)
             writer.write(resp)
-            val = handle_rdb_transfer(writer,msg)
+            val = handle_rdb_transfer(writer_obj,msg)
             writer.write(val)
             return
         else:
