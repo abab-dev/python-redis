@@ -4,6 +4,7 @@ import asyncio
 from .protocol_parser import RedisProtocolParser, Writer
 from .rdb import Dbparser
 from .commands import handle_echo, handle_ping, handle_get, handle_set,handle_config_get,handle_get_keys,handle_get_info
+from .replication import replica_tasks
 
 
 datastore = {}
@@ -82,6 +83,11 @@ async def main():
         port = int(args.port)
     if args.replicaof:
         INFO['role']="slave"
+        master_host, master_port = args.replicaof[0].split(" ")
+        reader, writer = await asyncio.open_connection(
+            master_host, master_port
+        )
+        asyncio.create_task(replica_tasks(reader,writer))
     global datastore
     kv_store = init_rdb_parser(rdb_parser_required, rdb_file_path)
     datastore |= kv_store
