@@ -5,7 +5,6 @@ async def propagate_commands(
     replication_buffer,
     replicas
 ): 
-    WAIT_TIME = 0.125  # seconds
     while True:
         if len(replicas) != 0:
             if len(replication_buffer) != 0:
@@ -14,7 +13,6 @@ async def propagate_commands(
                     _, w = replica
                     se = Writer()
                     await w.write(se.serialize(cmd))
-        await sleep(WAIT_TIME)
 async def replica_tasks(rep_reader,rep_writer):
     parser = RedisProtocolParser() 
     writer_obj = Writer()
