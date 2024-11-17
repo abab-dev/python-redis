@@ -13,8 +13,6 @@ async def propagate_commands(
                     _, w = replica
                     se = Writer()
                     await w.write(se.serialize(cmd))
-        else:
-            return
         sleep(0.125)
 async def replica_tasks(rep_reader,rep_writer):
     parser = RedisProtocolParser() 
@@ -43,7 +41,6 @@ async def replica_tasks(rep_reader,rep_writer):
     data = parser.read_rdb(rdb)
     
     print(data)
-    global datastore
     offset = 0  # Count of processed bytes
     while True:
         try:

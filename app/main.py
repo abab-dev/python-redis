@@ -63,6 +63,7 @@ async def handle_client(reader, writer):
             val = handle_rdb_transfer(writer_obj,msg)
             writer.write(val)
             replicas.append((reader,writer))
+            print(replicas)
             return
         else:
             resp = b"ERROR unknown command\r\n"
@@ -105,6 +106,7 @@ async def main():
     else:
         print("before propogate commands")
         asyncio.create_task(propagate_commands(replication_buffer, replicas))
+        print("after propogation")
 
     global datastore
     kv_store = init_rdb_parser(rdb_parser_required, rdb_file_path)
