@@ -50,6 +50,17 @@ class RedisProtocolParser:
             return b""
         data = self.buf.readexactly(length)
         return data
+    def get_byte_offset(self, message) :
+        # Returns the byte offset for a RESP command
+        # To be used only with RESP Arrays
+        offset = 0
+        offset += 2 * (2 * len(message) + 1)
+        offset += len(str(len(message))) + 1
+        for _, val in enumerate(message):
+            msg_len = len(val)
+            offset += len(str(msg_len)) + 1
+            offset += msg_len
+        return offset
 
     
 
