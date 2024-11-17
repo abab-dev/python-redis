@@ -3,11 +3,14 @@ import os
 import asyncio
 from .protocol_parser import RedisProtocolParser, Writer
 from .rdb import Dbparser
-from .commands import handle_echo, handle_ping, handle_get, handle_set,handle_config_get,handle_get_keys
+from .commands import handle_echo, handle_ping, handle_get, handle_set,handle_config_get,handle_get_keys,handle_get_info
 
 
 datastore = {}
 CONFIG = {}
+INFO={
+    "role":"master"
+}
 rdb_file_path=""
 rdb_parser_required = False
 def init_rdb_parser(parsing_reqd_flag, rdb_file_path):
@@ -44,6 +47,8 @@ async def handle_client(reader, writer):
             resp = handle_config_get(writer_obj,msg,CONFIG)
         elif command == "KEYS":
             resp = handle_get_keys(writer_obj,msg,datastore)
+        elif command == "INFO":
+            resp = handle_get_info(writer_obj,msg,INFO)
         else:
             resp = b"ERROR unknown command\r\n"
         # print("commands checked")

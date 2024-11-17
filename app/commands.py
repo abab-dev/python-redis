@@ -28,6 +28,12 @@ def handle_get_keys(writer,msg,datastore):
     key_list = list(datastore.keys())
     print()
     return  writer.serialize(key_list)
+def handle_get_info(writer,msg,info):
+    if(msg[1]=="replication"):
+        value = info.get("role",None)
+        resp = f'role:{value}'
+        return writer.serialize(resp)
+
 
 
 
