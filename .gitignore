@@ -9,6 +9,7 @@ __pycache__/
 test_commands.py
 test_parser.py
 main1.py
+dumb.rdb
 
 # Distribution / packaging
 .Python

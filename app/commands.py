@@ -22,6 +22,14 @@ def handle_config_get(writer,msg,config):
     key = msg[2]
     value = config.get(key,None)
     return writer.serialize([key,value])
+def handle_get_keys(writer,msg,datastore):
+    key = msg[1]
+    assert key == "*"
+    key_list = list(datastore.keys())
+    print()
+    return  writer.serialize(key_list)
+
+
 
 
 

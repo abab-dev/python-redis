@@ -2,11 +2,20 @@ import argparse
 import os
 import asyncio
 from .protocol_parser import RedisProtocolParser, Writer
-from .commands import handle_echo, handle_ping, handle_get, handle_set,handle_config_get
+from .rdb import Dbparser
+from .commands import handle_echo, handle_ping, handle_get, handle_set,handle_config_get,handle_get_keys
+
 
 datastore = {}
 CONFIG = {}
 rdb_file_path=""
+rdb_parser_required = False
+def init_rdb_parser(parsing_reqd_flag, rdb_file_path):
+    if parsing_reqd_flag and os.path.isfile(rdb_file_path):
+        parser =Dbparser(rdb_file_path)
+        return parser.kv
+    return {}
+
 
 async def handle_client(reader, writer):
     addr = writer.get_extra_info('peername')
@@ -33,6 +42,8 @@ async def handle_client(reader, writer):
             resp = handle_set(writer_obj, msg, datastore)
         elif command == "CONFIG":
             resp = handle_config_get(writer_obj,msg,CONFIG)
+        elif command == "KEYS":
+            resp = handle_get_keys(writer_obj,msg,datastore)
         else:
             resp = b"ERROR unknown command\r\n"
         # print("commands checked")
@@ -58,6 +69,9 @@ async def main():
         CONFIG["dbfilename"] = filename = str(args.dbfilename)
         rdb_parser_required = True
         rdb_file_path = os.path.join(dir, filename)
+    global datastore
+    kv_store = init_rdb_parser(rdb_parser_required, rdb_file_path)
+    datastore |= kv_store
     server = await asyncio.start_server(handle_client, '127.0.0.1', 6379)
     addrs = ', '.join(str(sock.getsockname()) for sock in server.sockets)
     print(f'Serving on {addrs}')
