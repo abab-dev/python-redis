@@ -39,6 +39,7 @@ async def handle_client(reader, writer):
         writer_obj = Writer()
         # print("before parsing data")
         msg = parser.parse(data)
+        print(msg)
         # print("data parased")
         command = msg[0].upper()
         if command == 'PING':
@@ -63,7 +64,8 @@ async def handle_client(reader, writer):
             val = handle_rdb_transfer(writer_obj,msg)
             writer.write(val)
             replicas.append((reader,writer))
-            print(replicas)
+            # reps = await replicas[0][0].read(1024)
+            # print(reps)
             return
         else:
             resp = b"ERROR unknown command\r\n"
@@ -111,12 +113,15 @@ async def main():
     global datastore
     kv_store = init_rdb_parser(rdb_parser_required, rdb_file_path)
     datastore |= kv_store
-    server = await asyncio.start_server(handle_client, host,port)
-    addrs = ', '.join(str(sock.getsockname()) for sock in server.sockets)
-    print(f'Serving on {addrs}')
+    try:
+        server = await asyncio.start_server(handle_client, host,port)
+        addrs = ', '.join(str(sock.getsockname()) for sock in server.sockets)
+        print(f'Serving on {addrs}')
+        async with server:
+            await server.serve_forever()
+    except Exception as e:
+        print(f'error {e} starting server')
 
-    async with server:
-        await server.serve_forever()
 
 if __name__ == "__main__":
     asyncio.run(main())

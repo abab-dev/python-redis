@@ -1,10 +1,12 @@
 from .protocol_parser import RedisProtocolParser,Writer
 from time import sleep
 from .time_utils import create_ts
+datastore={}
 async def propagate_commands(
     replication_buffer,
     replicas
 ): 
+    print(len(replicas))
     while True:
         if len(replicas) != 0:
             if len(replication_buffer) != 0:
@@ -44,11 +46,12 @@ async def replica_tasks(rep_reader,rep_writer):
     offset = 0  # Count of processed bytes
     while True:
         try:
-            msg = await parser.parse()
+            resp =  await rep_reader.read(1024)
+            msg = parser.parse(resp)
             print("Received from master :", msg)
         except (ConnectionResetError) as err:
             print(err)
-            await writer_obj.close()
+            await rep_writer.close()
             return
         command = msg[0].upper()
         match command:
