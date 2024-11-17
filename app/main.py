@@ -78,6 +78,8 @@ async def main():
     host, port = "127.0.0.1", 6379
     if args.port:
         port = int(args.port)
+    if args.replicaof:
+        INFO['role']="slave"
     global datastore
     kv_store = init_rdb_parser(rdb_parser_required, rdb_file_path)
     datastore |= kv_store
