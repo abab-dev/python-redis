@@ -66,7 +66,7 @@ async def handle_client(reader, writer):
             replicas.append((reader,writer))
             # reps = await replicas[0][0].read(1024)
             # print(reps)
-            return
+            return None
         else:
             resp = b"ERROR unknown command\r\n"
         # print("commands checked")
