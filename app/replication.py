@@ -14,7 +14,7 @@ async def propagate_commands(
                     _, w = replica
                     se = Writer()
                     await w.write(se.serialize(cmd))
-        await sleep(WAIT_TIME)
+        sleep(WAIT_TIME)
 async def replica_tasks(rep_reader,rep_writer):
     parser = RedisProtocolParser() 
     writer_obj = Writer()
@@ -69,4 +69,3 @@ async def replica_tasks(rep_reader,rep_writer):
                 pass
         bytes_to_process = parser.get_byte_offset(msg)
         offset += bytes_to_process
-    return
