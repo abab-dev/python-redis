@@ -69,10 +69,15 @@ async def main():
         CONFIG["dbfilename"] = filename = str(args.dbfilename)
         rdb_parser_required = True
         rdb_file_path = os.path.join(dir, filename)
-    global datastore
+
+    host, port = "127.0.0.1", 6379
+    if args.port:
+        port = int(args.port)
+    global datastore,rdb_parser_required,rdb_file_path
+    host, port = "127.0.0.1", 6379
     kv_store = init_rdb_parser(rdb_parser_required, rdb_file_path)
     datastore |= kv_store
-    server = await asyncio.start_server(handle_client, '127.0.0.1', 6379)
+    server = await asyncio.start_server(handle_client, host,port)
     addrs = ', '.join(str(sock.getsockname()) for sock in server.sockets)
     print(f'Serving on {addrs}')
 
