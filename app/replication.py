@@ -10,18 +10,22 @@ async def propagate_commands(
         if len(replicas) != 0:
             if len(replication_buffer) != 0:
                 cmd = replication_buffer.popleft()
+                print(f"Propagating command: {cmd}")
                 for replica in replicas[:]:
                     _, w = replica
                     if w.is_closing():
                         replicas.remove(replica)
                         continue
                     se = Writer()
+                    serialized_cmd = se.serialize(cmd)
+                    print(f"Serialized command: {serialized_cmd}")
                     try:
-                        await w.write(se.serialize(cmd))
+                        await w.write(serialized_cmd)
+                        print(f"Command propagated to replica")
                     except Exception as e:
                         print(f"Error propagating command to replica: {e}")
                         replicas.remove(replica)
-        await asyncio.sleep(0.01)  # Check for new commands more frequently
+        await asyncio.sleep(0.01)
 
 async def replica_tasks(rep_reader,rep_writer):
     parser = RedisProtocolParser() 
