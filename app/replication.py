@@ -12,9 +12,9 @@ async def propagate_commands(
             if len(replication_buffer) != 0:
                 cmd = replication_buffer.popleft()
                 for replica in replicas[:]:
-                    _, w = replica
+                    _, rep_writer = replica
                     se = Writer()
-                    w.write(se.serialize(cmd))
+                    rep_writer.write(se.serialize(cmd))
         await asyncio.sleep(0.125)
 
 async def replica_tasks(rep_reader,rep_writer):
@@ -40,13 +40,17 @@ async def replica_tasks(rep_reader,rep_writer):
     rdb = await rep_reader.read(1024)
     print(rdb)
     
+    # resp = writer_obj.serialize([])
+    
     offset = 0  # Count of processed bytes
     while True:
         try:
             resp =  await rep_reader.read(1024)
+            print("read response")
             print(resp)
             parser = RedisProtocolParser()
             msg = parser.parse(resp)
+            # print(msg)
             if(not msg):
                 continue
             print("Received from master :", msg)
@@ -68,9 +72,10 @@ async def replica_tasks(rep_reader,rep_writer):
                     # Master won't send any other REPLCONF message apart from
                     # GETACK.
                     response = ["REPLCONF", "ACK", str(offset)]
-                    await rep_writer.write(writer_obj.serialize(response))
+                    rep_writer.write(writer_obj.serialize(response))
                 case _:
+                    print("in case pass")
                     pass
             msg = msg[3:]
-        bytes_to_process = parser.get_byte_offset(msg)
-        offset += bytes_to_process
+            bytes_to_process = parser.get_byte_offset(msg)
+            offset += bytes_to_process
