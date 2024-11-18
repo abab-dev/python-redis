@@ -5,10 +5,9 @@ import asyncio
 from .protocol_parser import RedisProtocolParser, Writer
 from .rdb import Dbparser
 from .commands import handle_echo, handle_ping, handle_get, handle_set,handle_config_get,handle_get_keys,handle_get_info,handle_replconf,handle_psync,handle_rdb_transfer
-from .replication import replica_tasks,propagate_commands
+from .replication import replica_tasks,propagate_commands,datastore
 
 
-datastore = {}
 CONFIG = {}
 INFO={
     "role":"master",
@@ -40,7 +39,6 @@ async def handle_client(reader, writer):
         writer_obj = Writer()
         # print("before parsing data")
         msg = parser.parse(data)
-        print(msg)
         # print("data parased")
         command = msg[0].upper()
         if command == 'PING':
@@ -110,9 +108,7 @@ async def main():
         # print("replica conn established"+master_host+master_port)
         asyncio.create_task(replica_tasks(rep_reader,rep_writer))
     else:
-        print("before propogate commands")
         asyncio.create_task(propagate_commands(replication_buffer, replicas))
-        print("after propogation")
 
     global datastore
     kv_store = init_rdb_parser(rdb_parser_required, rdb_file_path)

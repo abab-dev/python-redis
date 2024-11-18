@@ -12,10 +12,16 @@ def handle_set(writer,msg,datastore):
     resp = b"+OK\r\n"
     return writer.serialize(resp)
 def handle_get(writer,msg,datastore):
+    print("replica_datastore"+"\n")
+    print(datastore)
+    print("replica_check_init")
     key = msg[1]
+    print("replica_msg_key ",msg)
     default_value = None,EXPIRY_DEFAULT
     value,expiry_ts = datastore.get(key,default_value)
+    print(value,expiry_ts)
     expired = validate_ts(datastore,key,expiry_ts)
+    print(expired)
     if(expired or value==None):
         return b'$-1\r\n'
     return writer.serialize(value)

@@ -13,8 +13,10 @@ class RedisProtocolParser:
         self.buf = StringIO()  
 
     def parse(self, data):
-        
-        self.buf.write(data.decode('utf-8'))
+        try: 
+            self.buf.write(data.decode('utf-8'))
+        except Exception as e:
+            return None
         self.buf.seek(0)  
 
         if self.buf.getvalue().startswith(REDIS_REQ_BULK):
@@ -35,12 +37,15 @@ class RedisProtocolParser:
         return data
 
     def parse_multibulk(self):
-        line = self.buf.readline()
-        length = int(line[1:-2])  
         arr = []
-        for _ in range(length):
-            val = self.parse_bulk()
-            arr.append(val)
+        while True:
+            line = self.buf.readline()
+            if not line:
+                break
+            length = int(line[1:-2])  
+            for _ in range(length):
+                val = self.parse_bulk()
+                arr.append(val)
         return arr
     def read_rdb(self): 
         _ = self.buf.readexactly(1)
@@ -103,3 +108,6 @@ class Writer:
         return obj.encode("utf-8")
 
     
+p = RedisProtocolParser()
+# print(p.parse(b'*3\r\n$3\r\nSET\r\n$3\r\nfoo\r\n$3\r\n123\r\n*3\r\n$3\r\nSET\r\n$3\r\nbar\r\n$3\r\n456\r\n*3\r\n$3\r\nSET\r\n$3\r\nbaz\r\n$3\r\n789\r\n'))
+# print(dir(StringIO()))
