@@ -69,7 +69,9 @@ async def handle_client(streamreader, streamwriter):
             # print(reps)
             return None
         elif command == "WAIT":
-            resp = handle_wait(writer,msg)
+            data = handle_wait(writer,msg)
+            resp = len(replicas)
+
         else:
             resp = b"ERROR unknown command\r\n"
         # print("commands checked")
