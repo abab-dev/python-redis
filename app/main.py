@@ -4,7 +4,7 @@ import os
 import asyncio
 from .protocol_parser import RedisProtocolParser, Writer
 from .rdb import Dbparser
-from .commands import handle_echo, handle_ping, handle_get, handle_set,handle_config_get,handle_get_keys,handle_get_info,handle_replconf,handle_psync,handle_rdb_transfer
+from .commands import handle_echo, handle_ping, handle_get, handle_set,handle_config_get,handle_get_keys,handle_get_info,handle_replconf,handle_psync,handle_rdb_transfer,handle_wait
 from .replication import replica_tasks,propagate_commands,datastore
 
 
@@ -68,6 +68,8 @@ async def handle_client(streamreader, streamwriter):
             # reps = await replicas[0][0].read(1024)
             # print(reps)
             return None
+        elif command == "WAIT":
+            resp = handle_wait(writer,msg)
         else:
             resp = b"ERROR unknown command\r\n"
         # print("commands checked")

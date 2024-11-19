@@ -62,6 +62,9 @@ def handle_rdb_transfer(writer,msg):
     msg = resp + bytes_data
 
     return writer.serialize(msg)
+def handle_wait(writer,msg):
+    resp = int(msg[1])
+    return writer.serialize(resp)
 
     
 
