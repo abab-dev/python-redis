@@ -25,46 +25,45 @@ def init_rdb_parser(parsing_reqd_flag, rdb_file_path):
     return {}
 
 
-async def handle_client(reader, writer):
-    addr = writer.get_extra_info('peername')
+async def handle_client(streamreader, streamwriter):
+    addr = streamwriter.get_extra_info('peername')
     print(f"Connected by {addr}")
     replication_offset = 0
+    reader,writer = RedisProtocolParser(streamreader),Writer(streamwriter)
 
-    while not reader.at_eof():
-        data = await reader.read(1024)
-        if not data:
+    while not streamreader.at_eof():
+        msg = await reader.parse()
+        # print(msg)
+        if not msg:
             break  
         # print(f"Received {data}")
-        parser = RedisProtocolParser()
-        writer_obj = Writer()
         # print("before parsing data")
-        msg = parser.parse(data)
         # print("data parased")
         command = msg[0].upper()
         if command == 'PING':
-            resp = handle_ping(writer_obj)
+            resp = handle_ping(writer)
         elif command == 'ECHO':
-            resp = handle_echo(writer_obj, msg)
+            resp = handle_echo(writer, msg)
         elif command == 'GET':
-            resp = handle_get(writer_obj, msg, datastore)
+            resp = handle_get(writer, msg, datastore)
         elif command == "SET":
-            resp = handle_set(writer_obj, msg, datastore)
-            data = writer_obj.serialize(msg)
-            replication_offset += parser.get_byte_offset(msg)
+            resp = handle_set(writer, msg, datastore)
+            data = writer.serialize(msg)
+            replication_offset += reader.get_byte_offset(msg)
             replication_buffer.append(data)
         elif command == "CONFIG":
-            resp = handle_config_get(writer_obj,msg,CONFIG)
+            resp = handle_config_get(writer,msg,CONFIG)
         elif command == "KEYS":
-            resp = handle_get_keys(writer_obj,msg,datastore)
+            resp = handle_get_keys(writer,msg,datastore)
         elif command == "INFO":
-            resp = handle_get_info(writer_obj,msg,INFO)
+            resp = handle_get_info(writer,msg,INFO)
         elif command == "REPLCONF":
-            resp = handle_replconf(writer_obj,msg)
+            resp = handle_replconf(writer,msg)
         elif command == "PSYNC":
-            resp = handle_psync(writer_obj,msg)
-            writer.write(resp)
-            val = handle_rdb_transfer(writer_obj,msg)
-            writer.write(val)
+            resp = handle_psync(writer,msg)
+            await writer.write_resp(resp)
+            val = handle_rdb_transfer(writer,msg)
+            await writer.write_resp(val)
             replicas.append((reader,writer))
             # reps = await replicas[0][0].read(1024)
             # print(reps)
@@ -74,8 +73,8 @@ async def handle_client(reader, writer):
         # print("commands checked")
         # print(resp)
 
-        writer.write(resp)
-        await writer.drain()  
+        await writer.write_resp(resp)
+        # writer.drain()  
 
     # print("Close the connection")
     writer.close()

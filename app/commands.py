@@ -12,11 +12,11 @@ def handle_set(writer,msg,datastore):
     resp = b"+OK\r\n"
     return writer.serialize(resp)
 def handle_get(writer,msg,datastore):
-    print("replica_datastore"+"\n")
-    print(datastore)
-    print("replica_check_init")
+    # print("replica_datastore"+"\n")
+    # print(datastore)
+    # print("replica_check_init")
     key = msg[1]
-    print("replica_msg_key ",msg)
+    # print("replica_msg_key ",msg)
     default_value = None,EXPIRY_DEFAULT
     value,expiry_ts = datastore.get(key,default_value)
     print(value,expiry_ts)

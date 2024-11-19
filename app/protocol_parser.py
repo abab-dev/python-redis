@@ -1,5 +1,4 @@
-from io import StringIO
-
+from asyncio import StreamReader,StreamWriter
 REDIS_REQ_INLINE = '+'
 REDIS_REQ_BULK = '$'
 REDIS_REQ_MULTIBULK = '*'
@@ -9,52 +8,78 @@ REDIS_REQ_INT = ':'
 REDIS_REQ_VERB = ''
 
 class RedisProtocolParser:
-    def __init__(self):
-        self.buf = StringIO()  
+    def __init__(self,reader):
+        self.reader= reader 
 
-    def parse(self, data):
-        try: 
-            self.buf.write(data.decode('utf-8'))
-        except Exception as e:
-           status, rest = data.split(b"\xa2") 
-           self.buf.write(rest.decode('utf-8'))
-        self.buf.seek(0)  
-
-        if self.buf.getvalue().startswith(REDIS_REQ_BULK):
-            return self.parse_bulk()
-        elif self.buf.getvalue().startswith(REDIS_REQ_MULTIBULK):
-            return self.parse_multibulk()
-        
-        else:
-            raise ValueError('Invalid request type')
-
-    def parse_bulk(self):
-        line = self.buf.readline()
-        length = int(line[1:-2])  
-        if length == -1:
-            return None  
-        data = self.buf.read(length)
-        self.buf.read(2)  
+    async def parse(self):
+        msg= await self.reader.readexactly(1)
+        command = msg.decode('utf-8')
+        match command:
+            case "+":  
+                string = await  self.parse_string()
+                return string
+            case "-":  
+                err = await self.parse_error()
+                return err
+            case ":": 
+                num = await self.parse_integer()
+                return num
+            case "$":
+                string =  await self.parse_bulk()  # type: ignore
+                return string
+            case "*":
+                arr = await self.parse_multibulk()
+                return arr
+            case _:
+                raise RuntimeError(f"Unknown payload identifier : {msg}")
+    async def parse_string(self):
+        data = await self.read_line()
+        return data
+    async def parse_error(self):
+        data = await self.read_line()
         return data
 
-    def parse_multibulk(self):
+    async def parse_integer(self):
+        data = await self.read_line()
+        return int(data)
+    async def parse_bulk(self):
+        line = await self.read_line()
+        length = int(line)  
+        if length == -1:
+            return None  
+        data = await self.read_until(length+2)
+        return data
+    async def read_line(self) :
+        data = await self.reader.readuntil(b"\r\n")
+        # print("data recieved is")
+        # print(data)
+        return data[:-2].decode()
+
+    async def read_until(self, n) :
+        data = await self.reader.readexactly(n)
+        return data[:-2].decode()
+
+
+    async def parse_multibulk(self):
         arr = []
-        while True:
-            line = self.buf.readline()
-            if not line:
-                break
-            length = int(line[1:-2])  
-            for _ in range(length):
-                val = self.parse_bulk()
-                arr.append(val)
+        line = await self.read_line()
+        # print(line.encode('utf-8'))
+        length = int(line) 
+        # print("lenght is " , length)
+        for _ in range(length):
+            val = await self.parse()
+            # print("parsed value is ", val)
+            arr.append(val)
         return arr
-    def read_rdb(self): 
-        _ = self.buf.readexactly(1)
-        line = self.buf.readline()
+
+
+    async def read_rdb(self): 
+        _ = await self.reader.readexactly(1)
+        line = await self.read_line()
         length = int(line)
         if length == -1:
             return b""
-        data = self.buf.readexactly(length)
+        data = await self.reader.readexactly(length)
         return data
     def get_byte_offset(self, message) :
         # Returns the byte offset for a RESP command
@@ -71,8 +96,8 @@ class RedisProtocolParser:
     
 
 class Writer:
-    def __init__(self):
-        self.writebuf = b''
+    def __init__(self,writer):
+        self.writer= writer 
 
     def serialize_str(self, data):
         if data is None:
@@ -107,9 +132,16 @@ class Writer:
         elif isinstance(msg,bytes):
             return msg 
         return obj.encode("utf-8")
+    
+    async def write_resp(self,msg):
+        data = self.serialize(msg)
+        if not data:
+            return 
+        self.writer.write(data)
 
     
 # p = RedisProtocolParser()
+# # print()
 # print(p.parse(b'*3\r\n$3\r\nSET\r\n$3\r\nfoo\r\n$3\r\n123\r\n*3\r\n$3\r\nSET\r\n$3\r\nbar\r\n$3\r\n456\r\n*3\r\n$3\r\nSET\r\n$3\r\nbaz\r\n$3\r\n789\r\n'))
 # print(p.parse(b'+FULLRESYNC 75cd7bc10c49047e0d163660f3b90625b1af31dc 0\r\n$88\r\nREDIS0011\xfa\tredis-ver\x057.2.0\xfa\nredis-bits\xc0@\xfa\x05ctime\xc2m\x08\xbce\xfa\x08used-mem\xc2\xb0\xc4\x10\x00\xfa\x08aof-base\xc0\x00\xff\xf0n;\xfe\xc0\xffZ\xa2*3\r\n$8\r\nREPLCONF\r\n$6\r\nGETACK\r\n$1\r\n*\r\n'))
 # print(dir(StringIO()))

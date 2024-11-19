@@ -1,4 +1,5 @@
 from .protocol_parser import RedisProtocolParser,Writer
+from io import BytesIO
 from .time_utils import create_ts
 import asyncio
 datastore={}
@@ -13,31 +14,29 @@ async def propagate_commands(
                 cmd = replication_buffer.popleft()
                 for replica in replicas[:]:
                     _, rep_writer = replica
-                    se = Writer()
-                    rep_writer.write(se.serialize(cmd))
-        await asyncio.sleep(0.125)
+                    await rep_writer.write_resp(cmd)
+        await asyncio.sleep(0.1)
 
 async def replica_tasks(rep_reader,rep_writer):
-    writer_obj = Writer()
+    reader,writer = RedisProtocolParser(rep_reader),Writer(rep_writer)
     print("replica_start")
-    data =  writer_obj.serialize(['PING'])
-    rep_writer.write(data)
-    resp = await rep_reader.read(1024)
+    data =  await writer.write_resp(['PING'])
+    resp = await reader.parse()
     print(data)
 
-    resp =  writer_obj.serialize(['REPLCONF','listening-port','6380'])
-    rep_writer.write(resp)
-    data = await rep_reader.read(1024)
+    resp =  await writer.write_resp(['REPLCONF','listening-port','6380'])
+    data = await reader.parse()
     print(data)
 
-    resp =  writer_obj.serialize(["REPLCONF", "capa", "psync2", "capa", "psync2"])
-    rep_writer.write(resp)
-    data = await rep_reader.read(1024)
+    resp =  await writer.write_resp(["REPLCONF", "capa", "psync2", "capa", "psync2"])
+    data = await reader.parse()
     print(data)
 
-    resp =  writer_obj.serialize(["PSYNC", "?", "-1"])
-    rep_writer.write(writer_obj.serialize(resp))
-    rdb = await rep_reader.read(1024)
+    resp =  await writer.write_resp(["PSYNC", "?", "-1"])
+    data = await reader.parse()
+    print(data)
+
+    rdb = await reader.read_rdb()
     print(rdb)
     
     # resp = writer_obj.serialize([])
@@ -45,11 +44,7 @@ async def replica_tasks(rep_reader,rep_writer):
     offset = 0  # Count of processed bytes
     while True:
         try:
-            resp =  await rep_reader.read(1024)
-            print("read response")
-            print(resp)
-            parser = RedisProtocolParser()
-            msg = parser.parse(resp)
+            msg  =  await reader.parse()
             # print(msg)
             if(not msg):
                 continue
@@ -58,24 +53,31 @@ async def replica_tasks(rep_reader,rep_writer):
             print(err)
             await rep_writer.close()
             return
-        while msg:
-            command = msg[0].upper()
-            match command:
-                case "SET":
-                    key, value = msg[1], msg[2]
-                    datastore[key] = (
-                        value,
-                        create_ts([]),
-                    )  # No active expiry
-                    print(datastore)
-                case "REPLCONF":
-                    # Master won't send any other REPLCONF message apart from
-                    # GETACK.
-                    response = ["REPLCONF", "ACK", str(offset)]
-                    rep_writer.write(writer_obj.serialize(response))
-                case _:
-                    print("in case pass")
-                    pass
-            msg = msg[3:]
-            bytes_to_process = parser.get_byte_offset(msg)
-            offset += bytes_to_process
+        command = msg[0].upper()
+        match command:
+            case "SET":
+                key, value = msg[1], msg[2]
+                datastore[key] = (
+                    value,
+                    create_ts([]),
+                )  # No active expiry
+                print(datastore)
+            case "REPLCONF":
+                # Master won't send any other REPLCONF message apart from
+                # GETACK.
+                response = ["REPLCONF", "ACK", str(offset)]
+                await writer.write_resp(response)
+               
+            case _:
+                # print("rest of the match")
+                # for m in msg:
+                #     replication_buffer.append(m)
+                # msg= []
+                pass
+                    
+                    
+                    # return(b'+1\r\n')
+                    
+            
+        bytes_to_process = reader.get_byte_offset(msg)
+        offset += bytes_to_process
