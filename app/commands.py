@@ -1,5 +1,7 @@
 from .time_utils import create_ts,validate_ts,EXPIRY_DEFAULT
 import binascii
+import time
+import asyncio
 def handle_echo(writer,arr):
     resp = arr[1]
     return writer.serialize(resp)
@@ -62,9 +64,57 @@ def handle_rdb_transfer(writer,msg):
     msg = resp + bytes_data
 
     return writer.serialize(msg)
-def handle_wait(writer,msg):
-    resp = int(msg[1])
-    return writer.serialize(resp)
+async def handle_wait(writer,msg,replicas,replication_offset):
+    print("in handlle wait")
+    updated_replicas = 0
+    start_time = time.time()
+    print(f"timer started at {start_time}")
+    await asyncio.sleep(0.125)
+    num_replicas,timeout = int(msg[1]),int(msg[2])
+    print(f"replicas{num_replicas}")
+    if(len(replicas)==0):
+        return 0
+    elif num_replicas == 0:
+        resp = len(replicas)
+    else:
+        print('inside for loop of ack')
+        for repl_reader,repl_writer in replicas:
+            await repl_writer.write_resp(['REPLCONF','GETACK','*'])
+        print("sent ack to all replicas")
+
+        for repl_reader,repl_writer in replicas:
+            try:
+                recieved_response = await asyncio.wait_for(repl_reader.parse(),timeout=0.125)
+                print("recieved_response ", recieved_response)
+                if(
+                    recieved_response 
+                    and recieved_response[0] == 'REPLCONF'
+                    and recieved_response[1] ==  'ACK'
+                ):
+                    local_offset = int(recieved_response[2])
+                    if local_offset >= replication_offset:
+                        print("local_offset",local_offset)
+                        print("replication_offset",replication_offset)
+                        updated_replicas+=1
+            except asyncio.TimeoutError:
+                print("Timeout Expird")
+        resp = updated_replicas
+        print('out of for loop of handle_wait ',resp)
+        end_time = time.time()
+        print(f'end time is {end_time} and loffset {local_offset} and repl_offset {replication_offset}')
+        elapsed_time = (end_time-start_time)*1000
+        if resp<num_replicas and replication_offset!=0:
+            t = max(0,timeout-elapsed_time)
+            print(f"waiting for {t} ms")
+            await asyncio.sleep(t/1000)
+        print('out of if condition of handlle_wait')
+        return writer.serialize(resp)
+
+
+
+
+
+    
 
     
 

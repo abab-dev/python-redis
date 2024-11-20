@@ -30,6 +30,7 @@ async def handle_client(streamreader, streamwriter):
     print(f"Connected by {addr}")
     replication_offset = 0
     reader,writer = RedisProtocolParser(streamreader),Writer(streamwriter)
+    lock = asyncio.Lock()
 
     while not streamreader.at_eof():
         msg = await reader.parse()
@@ -69,15 +70,23 @@ async def handle_client(streamreader, streamwriter):
             # print(reps)
             return None
         elif command == "WAIT":
-            data = handle_wait(writer,msg)
-            resp = len(replicas)
+            # print("in wait")
+            # async with lock:
+            print("before async call to handle wait")
+            resp = await handle_wait(writer,msg,replicas,replication_offset)
+            print("after async call to handle wait")
+            print(resp)
+        
 
         else:
             resp = b"ERROR unknown command\r\n"
         # print("commands checked")
         # print(resp)
 
+        # print(resp)
+        print("hi from write_resp in main")
         await writer.write_resp(resp)
+
         # writer.drain()  
 
     # print("Close the connection")

@@ -112,6 +112,8 @@ class Writer:
         return f':{data}\r\n'
 
     def serialize_array(self, arr):
+        print(arr)
+        print("serialize_array")
         response = f'*{len(arr)}\r\n'
         for val in arr:
             if isinstance(val, str):
@@ -121,7 +123,9 @@ class Writer:
         return response
 
     def serialize(self,msg,error=False) :
+        print(msg)
         if isinstance(msg,list) :
+            print("in ser array phase")
             obj = self.serialize_array(msg)
         elif isinstance(msg,str):
             obj = self.serialize_str(msg)
@@ -134,7 +138,9 @@ class Writer:
         return obj.encode("utf-8")
     
     async def write_resp(self,msg):
+        print("msg from write resp ",msg)
         data = self.serialize(msg)
+        print(data)
         if not data:
             return 
         self.writer.write(data)
