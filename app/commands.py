@@ -65,19 +65,14 @@ def handle_rdb_transfer(writer,msg):
 
     return writer.serialize(msg)
 async def handle_wait(writer,msg,replicas,replication_offset):
-    print("in handlle wait")
     updated_replicas = 0
     start_time = time.time()
     print(f"timer started at {start_time}")
     await asyncio.sleep(0.125)
     num_replicas,timeout = int(msg[1]),int(msg[2])
-    print(f"replicas{num_replicas}")
-    if(len(replicas)==0):
-        return 0
-    elif num_replicas == 0:
+    if num_replicas == 0:
         resp = len(replicas)
     else:
-        print('inside for loop of ack')
         for repl_reader,repl_writer in replicas:
             await repl_writer.write_resp(['REPLCONF','GETACK','*'])
         print("sent ack to all replicas")
@@ -98,17 +93,16 @@ async def handle_wait(writer,msg,replicas,replication_offset):
                         updated_replicas+=1
             except asyncio.TimeoutError:
                 print("Timeout Expird")
-        resp = updated_replicas
-        print('out of for loop of handle_wait ',resp)
-        end_time = time.time()
-        print(f'end time is {end_time} and loffset {local_offset} and repl_offset {replication_offset}')
-        elapsed_time = (end_time-start_time)*1000
-        if resp<num_replicas and replication_offset!=0:
-            t = max(0,timeout-elapsed_time)
-            print(f"waiting for {t} ms")
-            await asyncio.sleep(t/1000)
-        print('out of if condition of handlle_wait')
-        return writer.serialize(resp)
+    resp = updated_replicas
+    print('out of for loop of handle_wait response is',resp)
+    end_time = time.time()
+    # print(f'end time is {end_time} and loffset {local_offset} and repl_offset {replication_offset}')
+    elapsed_time = (end_time-start_time)*1000
+    if resp<num_replicas and replication_offset!=0:
+        t = max(0,timeout-elapsed_time)
+        print(f"waiting for {t} ms")
+        await asyncio.sleep(t/1000)
+    return writer.serialize(resp)
 
 
 

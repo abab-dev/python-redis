@@ -72,9 +72,7 @@ async def handle_client(streamreader, streamwriter):
         elif command == "WAIT":
             # print("in wait")
             # async with lock:
-            print("before async call to handle wait")
             resp = await handle_wait(writer,msg,replicas,replication_offset)
-            print("after async call to handle wait")
             print(resp)
         
 
@@ -84,7 +82,6 @@ async def handle_client(streamreader, streamwriter):
         # print(resp)
 
         # print(resp)
-        print("hi from write_resp in main")
         await writer.write_resp(resp)
 
         # writer.drain()  
