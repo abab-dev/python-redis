@@ -23,6 +23,7 @@ def init_rdb_parser(parsing_reqd_flag, rdb_file_path):
         parser =Dbparser(rdb_file_path)
         return parser.kv
     return {}
+is_waiting = False
 
 
 async def handle_client(streamreader, streamwriter):

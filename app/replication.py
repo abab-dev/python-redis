@@ -67,6 +67,7 @@ async def replica_tasks(rep_reader,rep_writer):
                 # GETACK.
                 response = ["REPLCONF", "ACK", str(offset)]
                 await writer.write_resp(response)
+                print(f"send to master from repl block {response}")
                
             case _:
                 # print("rest of the match")
