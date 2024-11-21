@@ -1,7 +1,7 @@
 from .time_utils import create_ts,validate_ts,EXPIRY_DEFAULT
 import binascii
 import time
-import asyncio
+import asyncio 
 def handle_echo(writer,arr):
     resp = arr[1]
     return writer.serialize(resp)
@@ -65,17 +65,19 @@ def handle_rdb_transfer(writer,msg):
 
     return writer.serialize(msg)
 async def handle_wait(writer,msg,replicas,replication_offset):
-    updated_replicas = 0
     start_time = time.time()
+    updated_replicas = 0 
     print(f"timer started at {start_time}")
     await asyncio.sleep(0.125)
     num_replicas,timeout = int(msg[1]),int(msg[2])
-    if num_replicas == 0:
+    if replication_offset == 0:
         resp = len(replicas)
     else:
         for repl_reader,repl_writer in replicas:
-            await repl_writer.write_resp(['REPLCONF','GETACK','*'])
-        print("sent ack to all replicas")
+            try:
+                await repl_writer.write_resp(['REPLCONF','GETACK','*'])
+            except Exception as e:
+                print("Failed to send ack to replicas: {e}")
 
         for repl_reader,repl_writer in replicas:
             try:
@@ -90,10 +92,10 @@ async def handle_wait(writer,msg,replicas,replication_offset):
                     if local_offset >= replication_offset:
                         print("local_offset",local_offset)
                         print("replication_offset",replication_offset)
-                        updated_replicas+=1
+                        updated_replicas +=1
             except asyncio.TimeoutError:
-                print("Timeout Expird")
-    resp = updated_replicas
+                print("Timeout Expired")
+        resp = updated_replicas
     print('out of for loop of handle_wait response is',resp)
     end_time = time.time()
     # print(f'end time is {end_time} and loffset {local_offset} and repl_offset {replication_offset}')
