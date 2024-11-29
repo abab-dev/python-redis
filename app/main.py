@@ -4,7 +4,7 @@ import os
 import asyncio
 from .protocol_parser import RedisProtocolParser, Writer
 from .rdb import Dbparser
-from .commands import handle_echo, handle_ping, handle_get, handle_set,handle_config_get,handle_get_keys,handle_get_info,handle_replconf,handle_psync,handle_rdb_transfer,handle_wait
+from .commands import handle_echo, handle_ping, handle_get, handle_set,handle_config_get,handle_get_keys,handle_get_info,handle_replconf,handle_psync,handle_rdb_transfer,handle_wait,handle_type
 from .replication import replica_tasks,propagate_commands,datastore
 
 
@@ -23,7 +23,6 @@ def init_rdb_parser(parsing_reqd_flag, rdb_file_path):
         parser =Dbparser(rdb_file_path)
         return parser.kv
     return {}
-is_waiting = False
 
 
 async def handle_client(streamreader, streamwriter):
@@ -75,6 +74,9 @@ async def handle_client(streamreader, streamwriter):
             # async with lock:
             resp = await handle_wait(writer,msg,replicas,replication_offset)
             print(resp)
+        elif command == "TYPE":
+            resp = handle_type(writer,msg,datastore)
+            
         
 
         else:
